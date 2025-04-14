@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Was ziehe ich an</title>
+    <style>
+      /* Einfaches, kinderfreundliches Styling */
+      body {
+        font-family: Arial, sans-serif;
+        background: #e0f7fa;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+      }
+      h1 {
+        color: #00796b;
+      }
+      #temperature {
+        font-size: 2em;
+        margin-top: 10px;
+      }
+      canvas {
+        background: #ffffff;
+        border: 2px solid #00796b;
+        margin-top: 20px;
+      }
+      #clothing-advice {
+        margin-top: 20px;
+      }
+      #clothing-advice img {
+        max-width: 100px;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Was ziehe ich an</h1>
+    <div id="temperature">Lade Temperatur...</div>
+    <!-- Canvas für das analoge Thermometer -->
+    <canvas id="thermometerCanvas" width="150" height="400"></canvas>
+
+    <!-- Hier wird das Bild angezeigt -->
+    <div id="clothing-advice"></div>
+
+    <script>
+      // Konstanten für das Thermometer (Temperaturbereich von -10°C bis 40°C)
+      const minTemp = -10;
+      const maxTemp = 40;
+
+      const canvas = document.getElementById("thermometerCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Funktion, um das analoge Thermometer zu zeichnen
+      function drawThermometer(currentTemp) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Definition des Thermometerrahmens
+        const thermoX = canvas.width / 2 - 20;
+        const thermoY = 50;
+        const thermoWidth = 40;
+        const thermoHeight = 300;
+
+        // Rahmen zeichnen
+        ctx.strokeStyle = "#00796B";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(thermoX, thermoY, thermoWidth, thermoHeight);
+
+        // Berechne den Anteil der Füllung anhand der aktuellen Temperatur
+        const tempFraction = (currentTemp - minTemp) / (maxTemp - minTemp);
+        const fillHeight = tempFraction * thermoHeight;
+
+        // Füllen von unten nach oben (Farbe Orange)
+        ctx.fillStyle = "#FF5722";
+        ctx.fillRect(
+          thermoX,
+          thermoY + thermoHeight - fillHeight,
+          thermoWidth,
+          fillHeight
+        );
+
+        // Skala mit Temperaturwerten (alle 10°) zeichnen
+        ctx.fillStyle = "#000000";
+        ctx.font = "16px Arial";
+        for (let temp = minTemp; temp <= maxTemp; temp += 5) {
+          const fraction = (temp - minTemp) / (maxTemp - minTemp);
+          const yPos = thermoY + thermoHeight - fraction * thermoHeight;
+          ctx.fillText(temp + "°C", thermoX - 50, yPos + 5);
+          // Kleine Linie als Markierung
+          ctx.beginPath();
+          ctx.moveTo(thermoX - 10, yPos);
+          ctx.lineTo(thermoX, yPos);
+          ctx.stroke();
+        }
+      }
+
+      // Funktion, um das aktuelle Wetter von Leipzig von OpenWeatherMap abzurufen
+      function getWeather() {
+        // API-URL (ersetze DEINE_API_KEY durch deinen persönlichen API-Schlüssel!)
+        const apiKey = "7943953881a940528b678aa00a5cafd4";
+        const city = "Leipzig";
+        const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=de`;
+
+        fetch(apiUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            // Extrahiere die aktuelle Temperatur
+            const currentTemp = data.main.temp;
+            document.getElementById("temperature").innerText =
+              "Aktuelle Temperatur: " + currentTemp.toFixed(1) + "°C";
+            // Zeichne das Thermometer mit der aktuellen Temperatur
+            drawThermometer(currentTemp);
+
+            // Empfehlung für die Kleidung basierend auf der Temperatur
+            let imageSrc = "";
+            if (currentTemp >= 0 && currentTemp < 15) {
+              imageSrc = "jacke2SW.jpg"; // Pfad zum Jacken-Bild
+            } else if (currentTemp >= 15 && currentTemp < 22) {
+              imageSrc = "pullover.jpg"; // Pfad zum Pullover-Bild
+            } else if (currentTemp >= 22 && currentTemp < 40) {
+              imageSrc = "sonnencreme.jpg"; // Pfad zum Sonnencreme-Bild
+            }
+
+            // Füge das Bild in denDiv ein
+            const clothingAdviceDiv =
+              document.getElementById("clothing-advice");
+            if (imageSrc) {
+              clothingAdviceDiv.innerHTML =
+                '<img src="' + imageSrc + '" alt="Kleidungsempfehlung" />';
+            } else {
+              clothingAdviceDiv.innerHTML = ""; // Kein Bild, wenn keine Bedingung zutrifft
+            }
+          })
+          .catch((error) => {
+            console.error("Fehler beim Abruf der Wetterdaten:", error);
+            document.getElementById("temperature").innerText =
+              "Fehler beim Abruf der Wetterdaten";
+          });
+      }
+
+      // Hole die Wetterdaten, sobald die Seite geladen wird
+      window.onload = getWeather;
+    </script>
+  </body>
+</html>
